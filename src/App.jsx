@@ -5,7 +5,6 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
-// 4개 생태계 데이터 정의 (4단계 계층: top -> secondary -> primary -> producer)
 const ECOSYSTEMS = [
   {
     id: 'forest',
@@ -21,16 +20,12 @@ const ECOSYSTEMS = [
       message: '1차 소비자인 메뚜기가 멸종했습니다! 대체 먹이가 없는 동물은 굶어 죽을 위기에 처합니다.'
     },
     organisms: [
-      // Top (1)
       { id: 'f_top', name: '매', role: 'top', emoji: '🦅', eats: ['뱀', '개구리', '산토끼', '다람쥐'], desc: '하늘의 최고 포식자' },
-      // Secondary (2)
       { id: 'f_s1', name: '개구리', role: 'secondary', emoji: '🐸', eats: ['메뚜기'], desc: '작은 곤충을 날쌔게 잡아먹음' },
       { id: 'f_s2', name: '뱀', role: 'secondary', emoji: '🐍', eats: ['개구리', '산토끼', '다람쥐'], desc: '작은 동물을 통째로 삼킴' },
-      // Primary (3)
       { id: 'f_p1', name: '메뚜기', role: 'primary', emoji: '🦗', eats: ['풀잎'], desc: '풀잎을 갉아먹는 곤충' },
       { id: 'f_p2', name: '산토끼', role: 'primary', emoji: '🐇', eats: ['풀잎'], desc: '풀과 어린 싹을 먹는 초식동물' },
       { id: 'f_p3', name: '다람쥐', role: 'primary', emoji: '🐿️', eats: ['도토리'], desc: '도토리와 열매를 모으는 동물' },
-      // Producer (2)
       { id: 'f_b1', name: '풀잎', role: 'producer', emoji: '🌿', eats: [], desc: '햇빛을 받아 자라는 야생 풀' },
       { id: 'f_b2', name: '도토리', role: 'producer', emoji: '🌰', eats: [], desc: '참나무가 맺는 영양 많은 열매' }
     ]
@@ -110,26 +105,22 @@ const ECOSYSTEMS = [
 ];
 
 export default function FoodWebGame() {
-  // 학생 정보
   const [studentInfo, setStudentInfo] = useState({ grade: '4', classNum: '', studentNum: '', name: '' });
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // 스테이지 및 게임 상태
   const [unlockedStages, setUnlockedStages] = useState(['forest']);
   const [clearedStages, setClearedStages] = useState([]);
   const [currentStageId, setCurrentStageId] = useState(null);
   const [timeLeft, setTimeLeft] = useState(180);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
 
-  // 캔버스 상태
   const [selectedPrey, setSelectedPrey] = useState(null);
   const [connections, setConnections] = useState([]);
   const [feedback, setFeedback] = useState(null);
   const [guideCount, setGuideCount] = useState(1);
   const [showGuideModal, setShowGuideModal] = useState(false);
 
-  // 시뮬레이션 상태
-  const [phase, setPhase] = useState('building'); // 'building' | 'disaster' | 'simulating' | 'result'
+  const [phase, setPhase] = useState('building');
   const [extinctList, setExtinctList] = useState([]);
   const [starvingList, setStarvingList] = useState([]);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -138,7 +129,6 @@ export default function FoodWebGame() {
   const timerRef = useRef(null);
   const currentStage = ECOSYSTEMS.find(e => e.id === currentStageId);
 
-  // 타이머 작동
   useEffect(() => {
     if (isTimerRunning && timeLeft > 0) {
       timerRef.current = setInterval(() => {
@@ -152,7 +142,6 @@ export default function FoodWebGame() {
     return () => clearInterval(timerRef.current);
   }, [isTimerRunning, timeLeft]);
 
-  // 학생 등록 완료
   const handleStartLogin = (e) => {
     e.preventDefault();
     if (!studentInfo.name.trim()) {
@@ -162,7 +151,6 @@ export default function FoodWebGame() {
     setIsLoggedIn(true);
   };
 
-  // 스테이지 진입
   const enterStage = (stageId) => {
     const stage = ECOSYSTEMS.find(e => e.id === stageId);
     setCurrentStageId(stageId);
@@ -185,7 +173,6 @@ export default function FoodWebGame() {
     setTimeout(() => setFeedback(null), 3000);
   };
 
-  // 생물 클릭 처리
   const handleOrganismClick = (org) => {
     if (phase !== 'building') return;
 
@@ -203,7 +190,6 @@ export default function FoodWebGame() {
         return;
       }
 
-      // 실제 먹이 관계 검증
       const isValid = org.eats && org.eats.includes(selectedPrey.name);
 
       if (!isValid) {
@@ -245,7 +231,6 @@ export default function FoodWebGame() {
     setShowGuideModal(true);
   };
 
-  // 재난 시작
   const startDisaster = () => {
     clearInterval(timerRef.current);
     setIsTimerRunning(false);
@@ -257,7 +242,6 @@ export default function FoodWebGame() {
     }, 2800);
   };
 
-  // 연쇄 멸종 시뮬레이션
   const runSimulation = () => {
     setPhase('simulating');
     const targetName = currentStage.disaster.target;
@@ -291,155 +275,4 @@ export default function FoodWebGame() {
 
     setStarvingList(starved);
 
-    setTimeout(() => {
-      const topOrg = currentStage.organisms.find(o => o.role === 'top');
-      const isTopAlive = !currentDead.has(topOrg.id);
-
-      setIsSuccess(isTopAlive);
-      setPhase('result');
-
-      if (isTopAlive) {
-        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-        if (!clearedStages.includes(currentStage.id)) {
-          setClearedStages(prev => [...prev, currentStage.id]);
-        }
-        const currentIndex = ECOSYSTEMS.findIndex(e => e.id === currentStage.id);
-        if (currentIndex < ECOSYSTEMS.length - 1) {
-          const nextStageId = ECOSYSTEMS[currentIndex + 1].id;
-          if (!unlockedStages.includes(nextStageId)) {
-            setUnlockedStages(prev => [...prev, nextStageId]);
-          }
-        }
-      }
-    }, 2400);
-  };
-
-  const useMiracle = () => {
-    if (miracleUsed) return;
-    setMiracleUsed(true);
-    setExtinctList([]);
-    setStarvingList([]);
-    setPhase('building');
-    setTimeLeft(45);
-    setIsTimerRunning(true);
-    triggerFeedback('✨ 창조주의 기적으로 생태계가 복원되었습니다! 45초 동안 먹이그물을 더 촘촘히 보강하세요!', 'success');
-  };
-
-  const returnToMap = () => {
-    clearInterval(timerRef.current);
-    setCurrentStageId(null);
-    setPhase('building');
-  };
-
-  // ---------------- 1. 로그인 화면 ----------------
-  if (!isLoggedIn) {
-    return (
-      <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-4">
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 max-w-md w-full shadow-2xl text-center">
-          <div className="inline-flex p-3 rounded-2xl bg-indigo-950 border border-indigo-500/30 text-indigo-400 mb-4">
-            <Sparkles className="w-8 h-8" />
-          </div>
-          <h1 className="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">
-            위대한 창조주
-          </h1>
-          <p className="text-xs text-slate-400 mt-2 mb-6">초등학교 4학년 과학 • 생태계 먹이그물 챌린지</p>
-
-          <form onSubmit={handleStartLogin} className="space-y-4 text-left">
-            <div className="grid grid-cols-3 gap-2">
-              <div>
-                <label className="text-[11px] font-bold text-slate-400 block mb-1">학년</label>
-                <input
-                  type="text"
-                  value={studentInfo.grade}
-                  onChange={(e) => setStudentInfo({ ...studentInfo, grade: e.target.value })}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-center text-sm font-bold text-white focus:outline-none focus:border-cyan-500"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] font-bold text-slate-400 block mb-1">반</label>
-                <input
-                  type="text"
-                  placeholder="예: 2"
-                  value={studentInfo.classNum}
-                  onChange={(e) => setStudentInfo({ ...studentInfo, classNum: e.target.value })}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-center text-sm font-bold text-white focus:outline-none focus:border-cyan-500"
-                  required
-                />
-              </div>
-              <div>
-                <label className="text-[11px] font-bold text-slate-400 block mb-1">번호</label>
-                <input
-                  type="text"
-                  placeholder="예: 15"
-                  value={studentInfo.studentNum}
-                  onChange={(e) => setStudentInfo({ ...studentInfo, studentNum: e.target.value })}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-center text-sm font-bold text-white focus:outline-none focus:border-cyan-500"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-[11px] font-bold text-slate-400 block mb-1">창조주(학생) 이름</label>
-              <input
-                type="text"
-                placeholder="이름을 입력하세요"
-                value={studentInfo.name}
-                onChange={(e) => setStudentInfo({ ...studentInfo, name: e.target.value })}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm font-bold text-white focus:outline-none focus:border-cyan-500"
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full py-3.5 mt-2 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:brightness-110 text-slate-950 font-black rounded-xl text-base shadow-lg transition"
-            >
-              생태계 창조 시작하기 ➔
-            </button>
-          </form>
-        </div>
-      </div>
-    );
-  }
-
-  // ---------------- 2. 월드맵 화면 ----------------
-  if (!currentStageId) {
-    const isGameClear = ECOSYSTEMS.every(e => clearedStages.includes(e.id));
-
-    return (
-      <div className="min-h-screen bg-slate-950 text-white p-4 md:p-8 flex flex-col items-center select-none">
-        <header className="max-w-4xl w-full flex items-center justify-between border-b border-slate-800 pb-4 mb-6">
-          <div className="flex items-center gap-2">
-            <User className="w-5 h-5 text-cyan-400" />
-            <span className="font-bold text-sm text-slate-200">
-              {studentInfo.grade}학년 {studentInfo.classNum}반 {studentInfo.studentNum}번 <b>{studentInfo.name}</b> 창조주
-            </span>
-          </div>
-          <div className="text-xs text-slate-400 font-semibold">
-            정복한 생태계: <b className="text-emerald-400">{clearedStages.length} / 4</b>
-          </div>
-        </header>
-
-        <div className="text-center my-4">
-          <h1 className="text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-cyan-400 to-indigo-300">
-            생태계 월드맵
-          </h1>
-          <p className="mt-2 text-slate-400 text-xs md:text-sm">
-            순서대로 생태계에 들어가 먹이사슬을 연결하고 시련을 버텨내세요!
-          </p>
-        </div>
-
-        {/* 올클리어 인증서 */}
-        {isGameClear && (
-          <div className="max-w-lg w-full bg-gradient-to-b from-amber-500/20 to-slate-900 border-2 border-amber-400/50 rounded-3xl p-6 text-center my-4 shadow-2xl">
-            <Trophy className="w-14 h-14 text-yellow-400 mx-auto animate-bounce" />
-            <h2 className="text-xl font-bold text-amber-300 mt-2">🌟 위대한 마스터 창조주 인증</h2>
-            <p className="text-slate-300 text-xs mt-1">
-              축하합니다! <b>{studentInfo.name}</b> 학생은 숲, 강, 사막, 바다의 모든 생태계를 완벽한 먹이그물로 안정화시켰습니다.
-            </p>
-          </div>
-        )}
-
-        {/* 스테이지 카드 */}
-        <div className="grid grid-cols-1 md:grid-cols
+    setTimeout
